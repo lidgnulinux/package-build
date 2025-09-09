@@ -10,7 +10,8 @@ category=x11-wm
 build() {
 
 	# create package directory
-	mkdir "${pkg}_${version}_${release}_@${category}"
+	destdir="${pkg}_${version}_${release}_@${category}"
+	mkdir $destdir
 
 	# unpack the archive
 	tar -xf v$version.tar.gz
@@ -27,18 +28,18 @@ build() {
 
 	# build and install
 	make 
-	make PREFIX=/usr DESTDIR=../${pkg}_${version}_${release}_@${category} install 
+	make PREFIX=/usr DESTDIR=../$destdir install
 
 	# go back to previous working directory
 	cd ..
 
 	# copy build instruction to /var/lib/build/ & create archive
-	mkdir -p "${pkg}_${version}_${release}_@${category}"/var/lib/build
-	cp -r 2bwm.build "${pkg}_${version}_${release}_@${category}"/var/lib/build
-	tar -czvf ${pkg}_${version}_${release}_@${category}.tar.gz ${pkg}_${version}_${release}_@${category}
+	mkdir -p $destdir/var/lib/build
+	cp -r 2bwm.build $destdir/var/lib/build
+	tar -czvf ${pkg}_${version}_${release}_@${category}.tar.gz $destdir
 	
 	# cleanup the destdir directory
-	rm -rf "${pkg}_${version}_${release}_@${category}" 
+	rm -rf $destdir
 }
 
 build
