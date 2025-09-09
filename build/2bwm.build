@@ -1,0 +1,44 @@
+#!/bin/bash
+
+pkg=2bwm
+version=0.3
+release=1
+desc="Fast floating window manager"
+url="https://github.com/venam/2bwm"
+category=x11-wm
+
+build() {
+
+	# create package directory
+	mkdir "${pkg}_${version}_${release}_@${category}"
+
+	# unpack the archive
+	tar -xf v$version.tar.gz
+	
+	# go to build directory
+	cd $pkg-$version
+
+	# patch if necessary
+	patch -p1 -i ../00_dont_use_local_include_dir.patch 
+	patch -p1 -i ../gcc-15.patch 
+
+	# edit file (optional)
+	vim config.h
+
+	# build and install
+	make 
+	make PREFIX=/usr DESTDIR=../${pkg}_${version}_${release}_@${category} install 
+
+	# go back to previous working directory
+	cd ..
+
+	# copy build instruction to /var/lib/build/ & create archive
+	mkdir -p "${pkg}_${version}_${release}_@${category}"/var/lib/build
+	cp -r 2bwm.build "${pkg}_${version}_${release}_@${category}"/var/lib/build
+	tar -czvf ${pkg}_${version}_${release}_@${category}.tar.gz ${pkg}_${version}_${release}_@${category}
+	
+	# cleanup the destdir directory
+	rm -rf "${pkg}_${version}_${release}_@${category}" 
+}
+
+build

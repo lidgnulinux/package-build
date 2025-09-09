@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -e
+
+pkg=fastfetch
+version=2.48.0
+release=0
+desc="Like neofetch, but much faster because written mostly in C."
+url="https://github.com/fastfetch-cli/fastfetch"
+category=tools
+
+build() {
+
+	# create package directory / destination.
+	destdir="${pkg}_${version}_${release}_@${category}"
+	mkdir $destdir 
+
+	# unpack the archive
+	tar -xf $version.tar.gz
+	
+	# go to build directory
+	cd $pkg-$version
+
+	# patch if necessary
+	patch -p1 -i ../fix_Qi_packages_detection_add_stow.patch 
+
+	# build and install
+	cmake -B build -G Ninja \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		-DCMAKE_BUILD_TYPE=Release \
+		-DENABLE_SYSTEM_YYJSON=OFF \
+		-DENABLE_DIRECTX_HEADERS=OFF
+
+	cmake --build build --target fastfetch --target flashfetch
+	DESTDIR="../$destdir" cmake --install build
+
+	# go back to previous working directory
+	cd ..
+
+	# copy build instruction to /var/lib/build/ & create archive
+	mkdir -p $destdir/var/lib/build
+	cp -r $pkg.build $destdir/var/lib/build
+	tar -czvf ${pkg}_${version}_${release}_@${category}.tar.gz $destdir 
+	
+	# cleanup the destdir directory
+	rm -rf $destdir 
+}
+
+build

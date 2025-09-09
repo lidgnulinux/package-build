@@ -1,0 +1,50 @@
+#!/bin/bash
+
+set -e
+
+pkg=
+version=
+release=0
+desc=""
+url=""
+category=
+
+build() {
+
+	# create package directory / destination.
+	destdir="${pkg}_${version}_${release}_@${category}"
+	mkdir $destdir 
+
+	# unpack the archive
+	tar -xf $pkg-$version.tar.gz
+	
+	# go to build directory
+	cd $pkg-$version
+
+	# patch if necessary
+	patch -p1 -i 
+
+	# build and install
+	cmake -B build -G Ninja \
+		-DBUILD_SHARED_LIBS=ON \
+		-DCMAKE_BUILD_TYPE=MinSizeRel \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=/usr/lib \
+		-DBUILD_TESTING=OFF
+	cmake --build build
+
+	DESTDIR="../$destdir" cmake --install build
+
+	# go back to previous working directory
+	cd ..
+
+	# copy build instruction to /var/lib/build/ & create archive
+	mkdir -p $destdir/var/lib/build
+	cp -r $pkg.build $destdir/var/lib/build
+	tar -czvf ${pkg}_${version}_${release}_@${category}.tar.gz $destdir 
+	
+	# cleanup the destdir directory
+	rm -rf $destdir 
+}
+
+build

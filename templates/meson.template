@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -e
+
+pkg=
+version=
+release=0
+desc=""
+url=""
+category=
+
+build() {
+
+	# create package directory / destination.
+	destdir="${pkg}_${version}_${release}_@${category}"
+	mkdir $destdir 
+
+	# unpack the archive
+	tar -xf $pkg-$version.tar.gz
+	
+	# go to build directory
+	cd $pkg-$version
+
+	# patch if necessary
+	patch -p1 -i 
+
+	rm -rf BUILD
+	mkdir BUILD
+	cd BUILD
+
+	# build and install
+	meson setup $configure_args \
+		-D \
+		-D \
+		..
+
+	ninja -j2
+	DESTDIR="../../$destdir" ninja -j2 install
+
+	# go back to previous working directory
+	cd ../..
+
+	# copy build instruction to /var/lib/build/ & create archive
+	mkdir -p $destdir/var/lib/build
+	cp -r $pkg.build $destdir/var/lib/build
+	tar -czvf ${pkg}_${version}_${release}_@${category}.tar.gz $destdir 
+	
+	# cleanup the destdir directory
+	rm -rf $destdir 
+}
+
+build

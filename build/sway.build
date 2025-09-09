@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -e
+
+pkg=sway
+version=1.11
+release=0
+desc="SwayWM wayland compositor"
+url="https://github.com/swaywm/sway"
+category=wayland
+
+build() {
+
+	# create package directory / destination.
+	destdir="${pkg}_${version}_${release}_@${category}"
+	mkdir $destdir 
+
+	# unpack the archive
+	echo "unpack the sway archive !"
+	tar -xf /usr/src/qi/sources/$pkg-$version.tar.gz
+	
+	# go to build directory
+	cd $pkg-$version
+
+	# unpack the wlroots to subprojects
+	echo "make subprojects directory & unpack the wlroots archive !"
+
+	mkdir subprojects
+	tar -xf /usr/src/qi/sources/wlroots-0.19.0.tar.gz -C subprojects
+	mv subprojects/wlroots-0.19.0 subprojects/wlroots
+
+	rm -rf BUILD
+	mkdir BUILD
+	cd BUILD
+
+	# build and install
+	CC=clang CXX=clang++ \
+		meson setup --prefix=/usr \
+		-Ddefault_library=static ..
+
+	ninja -j2
+	DESTDIR="../../$destdir" ninja -j2 install
+
+	# go back to previous working directory
+	cd ../..
+
+	# copy build instruction to /var/lib/build/ & create archive
+	mkdir -p $destdir/var/lib/build
+	cp -r $pkg.build $destdir/var/lib/build
+	tar -czvf ${pkg}_${version}_${release}_@${category}.tar.gz $destdir 
+
+	echo "the ${pkg}_${version}_${release}_@${category}.tar.gz archive is ready !"
+	
+	# cleanup the destdir directory
+	rm -rf $destdir 
+}
+
+build
